@@ -43,7 +43,7 @@ extension DarwinProcessInfo: Hashable, Equatable {
     }
 }
 
-enum sortValues {
+enum sortValues{
     case pid
     case name
     case cpu_percent
@@ -166,15 +166,16 @@ class ProcessInfo : ObservableObject {
                 let total_time_diff_ns: UInt64 = total_current_time_ns - total_existing_time_ns
                 percent_cpu = (Double(total_time_diff_ns) / self.time_interval_ns) * 100.0
                 let percent_mem: Double = Double(pti.pointee.pti_resident_size) * 100.0 / maxMem
-                if (percent_cpu > 1.0) {
-                    let procInfoArrIndex = procInfoArr.firstIndex(of: DarwinProcessInfo(pid: UInt64(pid), name: "", cpu_percent: 0.0, mem_percent: 0.0) )
-                    if procInfoArrIndex == nil {
+                let procInfoArrIndex = procInfoArr.firstIndex(of: DarwinProcessInfo(pid: UInt64(pid), name: "", cpu_percent: 0.0, mem_percent: 0.0) )
+                if procInfoArrIndex == nil {
+                    if (percent_cpu > 1.0) {
                         self.procInfoArr.insert(DarwinProcessInfo(pid: UInt64(pid), name: nameString!, cpu_percent: percent_cpu, mem_percent: percent_mem), at: self.procInfoArr.endIndex)
-                    } else {
-                        self.procInfoArr[procInfoArrIndex!].name = nameString!
-                        self.procInfoArr[procInfoArrIndex!].cpu_percent = percent_cpu
-                        self.procInfoArr[procInfoArrIndex!].mem_percent = percent_mem
                     }
+                } 
+                else {
+                    self.procInfoArr[procInfoArrIndex!].name = nameString!
+                    self.procInfoArr[procInfoArrIndex!].cpu_percent = percent_cpu
+                    self.procInfoArr[procInfoArrIndex!].mem_percent = percent_mem
                 }
             }
         }
