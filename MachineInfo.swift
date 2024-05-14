@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 let HOST_BASIC_INFO_COUNT =  mach_msg_type_number_t(MemoryLayout<host_basic_info_data_t>.size / MemoryLayout<integer_t>.size)
 let ONE_K: Double = 1024
@@ -10,7 +11,9 @@ class MachineInfo : ObservableObject {
     @Published var cpuCount: natural_t = 0
     @Published var usages: [Double] = []
     @Published var currMemUsageRaw : Double = 0.0
-    @Published var availMemoryRaw : Double = 0.0
+    @Published var memInGB : Double = 0.0
+    @Published var global_diff: Double = 0.0
+    @Published var memMax : Double = 0.0
     
     init() {
         self.GetSysInfo()
@@ -54,6 +57,7 @@ class MachineInfo : ObservableObject {
         let diff_nice = Double(curr.cpu_ticks.3) - Double(prev.cpu_ticks.3)
         // CPU_STATE_MAX = 4
         let total : Double = diff_user + diff_system + diff_idle + diff_nice
+        self.global_diff += total
         
         let userPercentUsage = diff_user  * 100 / total
         let systemPercentUsage = diff_system  * 100 / total
@@ -79,6 +83,7 @@ class MachineInfo : ObservableObject {
         currInfo = nil
         
         if (prevLoad != nil) {
+            self.global_diff = 0.0
             for i in 0...(self.cpuCount-1){
                 self.GetUsagePercentage(Int(i))
             }
@@ -98,7 +103,8 @@ class MachineInfo : ObservableObject {
         
         let host_info = tmp_host_info.withMemoryRebound(to:  host_basic_info_data_t.self, capacity: Int(HOST_BASIC_INFO_COUNT))
                 { ptr -> host_basic_info_data_t in return ptr.pointee }
-        self.availMemoryRaw = Double(host_info.max_mem)/ONE_K/ONE_K/ONE_K // Get Memory in G
+        self.memMax = Double(host_info.max_mem)
+        self.memInGB = Double(host_info.max_mem)/ONE_K/ONE_K/ONE_K // Get Memory in G
         tmp_host_info.deallocate()
     }
     
